@@ -22,7 +22,7 @@ if [ -e /dev/mapper/ventoy -a -d /etc/vtoyboot/probe ]; then
         exit 0
     fi
 
-    newpara=$(echo $* | sed "s#/dev/mapper/ventoy#/dev/sda#")
+    newpara=$(echo $* | sed "s#/dev/mapper/ventoy\([0-9]*\)#/dev/vda\1#")
     echo "[$curdate] oldpara=$* newpara=$newpara" >> /etc/vtoyboot/probe/match.log
 
     id=1
