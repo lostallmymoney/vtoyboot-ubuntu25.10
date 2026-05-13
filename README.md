@@ -5,6 +5,8 @@ Tried to un-mess that project into something manageable
 
 ```sudo sh vtoyboot.sh -s```
 
+This probably works with a lot more recent distros, they are simply untested.
+
 `vtoyboot` modifies a Linux guest installed inside a `vhd`/`vdi`/`raw` image so
 that the image can later boot through Ventoy on real hardware.
 
