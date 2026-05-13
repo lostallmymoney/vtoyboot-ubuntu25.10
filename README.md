@@ -1,9 +1,9 @@
 # vtoyboot
+Tried to un-mess that project into something manageable
 
+!!!! PLEASE USE THE OPTION -s TO ENABLE SECURE BOOT !!!! :
 
-PLEASE USE THE OPTION -s TO ENABLE SECURE BOOT !!!!
-
-sudo sh vtoyboot.sh -s
+```sudo sh vtoyboot.sh -s```
 
 `vtoyboot` modifies a Linux guest installed inside a `vhd`/`vdi`/`raw` image so
 that the image can later boot through Ventoy on real hardware.
