@@ -18,11 +18,12 @@
 #************************************************************************************
 
 . ./tools/efi_legacy_grub.sh
+. ./common/vtoy-common.sh
 
 # Remove older Ventoy hook/install artifacts before rebuilding initramfs so the
 # current run is deterministic.
 vtoy_clean_env() {
-    rm -f /sbin/vtoydump  /sbin/vtoypartx  /sbin/vtoytool  /sbin/vtoydrivers
+    vtoy_clean_tools /sbin
     rm -f /usr/lib/initcpio/hooks/ventoy
     rm -f /usr/lib/initcpio/install/ventoy
 }
@@ -31,9 +32,8 @@ vtoy_clean_env
 
 # Install the helper binaries and mkinitcpio hook definitions into the guest OS,
 # then rebuild every preset so Ventoy's mapper setup runs during early boot.
-cp -a $vtdumpcmd /sbin/vtoydump
-cp -a $partxcmd  /sbin/vtoypartx
-cp -a $vtoytool  /sbin/vtoytool
+install_vtoy_tools /sbin
+install_vtoy_helper
 cp -a ./tools/vtoydrivers /sbin/vtoydrivers
 cp -a ./distros/$initrdtool/ventoy-install.sh  /usr/lib/initcpio/install/ventoy
 cp -a ./distros/$initrdtool/ventoy-hook.sh  /usr/lib/initcpio/hooks/ventoy
@@ -60,40 +60,7 @@ fi
 
 mkinitcpio -P
 
-disable_grub_os_probe
+run_vtoy_grub
 
-# Rebuild grub after the initramfs update while temporarily wrapping grub-probe
-# so the vdisk layout looks sane from inside the guest image.
-echo "grub mkconfig ..."
-PROBE_PATH=$(find_grub_probe_path)
-MKCONFIG_PATH=$(find_grub_mkconfig_path)
-echo "PROBE_PATH=$PROBE_PATH MKCONFIG_PATH=$MKCONFIG_PATH"
-
-if [ -e "$PROBE_PATH" -a -e "$MKCONFIG_PATH" ]; then
-    wrapper_grub_probe $PROBE_PATH
-    
-    GRUB_CFG_PATH=$(find_grub_config_path)
-    if [ -f "$GRUB_CFG_PATH" ]; then
-        echo "$MKCONFIG_PATH -o $GRUB_CFG_PATH"
-        $MKCONFIG_PATH -o $GRUB_CFG_PATH
-    else
-        echo "$MKCONFIG_PATH null"
-        $MKCONFIG_PATH > /dev/null 2>&1
-    fi
-fi
-
-
-if [ -e /sys/firmware/efi ]; then
-    if [ -e /dev/mapper/ventoy ]; then
-        echo "This is ventoy enviroment"
-    else
-        update_grub_config
-        install_legacy_bios_grub
-    fi
-    
-    if [ "$1" = "-s" ]; then
-        recover_shim_efi
-    else
-        replace_shim_efi
-    fi
-fi
+vtoy_post_efi "$@"
+install_vtoy_udev_hide_rule

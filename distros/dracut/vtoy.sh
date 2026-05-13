@@ -18,6 +18,7 @@
 #************************************************************************************
 
 . ./tools/efi_legacy_grub.sh
+. ./common/vtoy-common.sh
 
 # Dracut module location varies by distro packaging. Ubuntu 25.10 uses the
 # standard dracut layout, so pick the writable module tree dynamically.
@@ -34,16 +35,15 @@ else
 fi
 
 
-rm -f /bin/vtoydump /bin/vtoypartx /bin/vtoytool
+vtoy_clean_tools /bin
 rm -f $dracutConfPath/ventoy.conf
 rm -rf $vtmodpath
 mkdir -p $vtmodpath
 
 # Install the Ventoy dracut module plus the helper binaries that module calls
 # during early boot to recreate the virtual disk mapping.
-cp -a $vtdumpcmd /bin/vtoydump
-cp -a $partxcmd /bin/vtoypartx
-cp -a $vtoytool /bin/vtoytool
+install_vtoy_tools /bin
+install_vtoy_helper
 cp -a ./distros/$initrdtool/module-setup.sh $vtmodpath/
 cp -a ./distros/$initrdtool/ventoy-settled.sh $vtmodpath/
 
@@ -86,31 +86,7 @@ for k in $(ls /lib/modules); do
 done
 
 
-disable_grub_os_probe
-
-# Rebuild grub after the initrd update while using Ventoy's wrapper helpers so
-# grub sees the guest image layout consistently.
-echo "grub mkconfig ..."
-PROBE_PATH=$(find_grub_probe_path)
-EDITENV_PATH=$(find_grub_editenv_path)
-MKCONFIG_PATH=$(find_grub_mkconfig_path)
-echo "PROBE_PATH=$PROBE_PATH EDITENV_PATH=$EDITENV_PATH MKCONFIG_PATH=$MKCONFIG_PATH"
-
-if [ -e "$PROBE_PATH" -a -e "$MKCONFIG_PATH" ]; then
-    wrapper_grub_probe $PROBE_PATH
-    if [ -e "$EDITENV_PATH" ]; then
-        wrapper_grub_editenv $EDITENV_PATH
-    fi
-
-    GRUB_CFG_PATH=$(find_grub_config_path)
-    if [ -f "$GRUB_CFG_PATH" ]; then
-        echo "$MKCONFIG_PATH -o $GRUB_CFG_PATH"
-        $MKCONFIG_PATH -o $GRUB_CFG_PATH
-    else
-        echo "$MKCONFIG_PATH null"
-        $MKCONFIG_PATH > /dev/null 2>&1
-    fi
-fi
+run_vtoy_grub
 
 
 if [ -e /sys/firmware/efi ]; then
@@ -137,3 +113,6 @@ if [ -e /sys/firmware/efi ]; then
     fi
     
 fi
+
+vtoy_post_efi "$@"
+install_vtoy_udev_hide_rule

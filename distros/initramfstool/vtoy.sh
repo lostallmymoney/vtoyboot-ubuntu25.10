@@ -20,7 +20,7 @@
 # Remove older Ventoy hook/install artifacts before rebuilding initramfs so the
 # current run is deterministic.
 vtoy_clean_env() {
-    rm -f /sbin/vtoydump  /sbin/vtoypartx  /sbin/vtoytool  /sbin/vtoydrivers
+    vtoy_clean_tools /sbin
     rm -f /usr/share/initramfs-tools/hooks/vtoy-hook.sh  
     rm -f /etc/initramfs-tools/scripts/local-top/vtoy-local-top.sh
 }
@@ -65,14 +65,14 @@ vtoy_fix_elementary_partuuid() {
 }
 
 . ./tools/efi_legacy_grub.sh
+. ./common/vtoy-common.sh
 
 vtoy_clean_env
 
 # Install the helper binaries and initramfs-tools hooks into the guest OS, then
 # rebuild the initramfs so Ventoy's mapper setup runs during early boot.
-cp -a $vtdumpcmd /sbin/vtoydump
-cp -a $partxcmd  /sbin/vtoypartx
-cp -a $vtoytool  /sbin/vtoytool
+install_vtoy_tools /sbin
+install_vtoy_helper
 cp -a ./tools/vtoydrivers /sbin/vtoydrivers
 cp -a ./distros/$initrdtool/vtoy-hook.sh  /usr/share/initramfs-tools/hooks/
 cp -a ./distros/$initrdtool/vtoy-local-top.sh  /etc/initramfs-tools/scripts/local-top/
@@ -81,45 +81,19 @@ echo "updating the initramfs, please wait ..."
 update-initramfs -u
 
 
-disable_grub_os_probe
-
-# Rebuild grub after the initramfs update while temporarily wrapping grub-probe
-# so the vdisk layout looks sane from inside the guest image.
-echo "grub mkconfig ..."
-PROBE_PATH=$(find_grub_probe_path)
-MKCONFIG_PATH=$(find_grub_mkconfig_path)
-echo "PROBE_PATH=$PROBE_PATH MKCONFIG_PATH=$MKCONFIG_PATH"
-
-if [ -e "$PROBE_PATH" -a -e "$MKCONFIG_PATH" ]; then
-    wrapper_grub_probe $PROBE_PATH
-    
-    GRUB_CFG_PATH=$(find_grub_config_path)
-    if [ -f "$GRUB_CFG_PATH" ]; then
-        echo "$MKCONFIG_PATH -o $GRUB_CFG_PATH"
-        $MKCONFIG_PATH -o $GRUB_CFG_PATH
-    else
-        echo "$MKCONFIG_PATH null"
-        $MKCONFIG_PATH > /dev/null 2>&1
-    fi
-fi
+run_vtoy_grub
 
 
 
 # Refresh EFI-facing boot files after the initramfs/grub work.
-if [ -e /sys/firmware/efi ]; then
-    if [ -e /dev/mapper/ventoy ]; then
-        echo "This is ventoy enviroment"
-    else
-        vtoy_fix_elementary_partuuid
-        update_grub_config
-        install_legacy_bios_grub        
-    fi
-    
-    if [ "$1" = "-s" ]; then
-        recover_shim_efi
-    else
-        replace_shim_efi
-    fi
-    
+vtoy_efi_pre_hook() {
+    vtoy_fix_elementary_partuuid
+}
+
+vtoy_efi_post_hook() {
     vtoy_efi_fixup
-fi
+}
+
+vtoy_post_efi "$@"
+install_vtoy_udev_hide_rule
+
