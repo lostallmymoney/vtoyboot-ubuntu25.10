@@ -32,6 +32,7 @@ cp -rL \
     "$ROOT/docs" \
     "$ROOT/distros" \
     "$ROOT/scripts" \
+    "$ROOT/common" \
     "$ROOT/third_party" \
     "$ROOT/tools" \
     "$ROOT/toolsbuild.txt" \
