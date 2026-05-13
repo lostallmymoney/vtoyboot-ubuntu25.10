@@ -18,7 +18,7 @@
 #************************************************************************************
 
 . ./tools/efi_legacy_grub.sh
-. ./../common/vtoy-common.sh
+. ./common/vtoy-common.sh
 
 # Dracut module location varies by distro packaging. Ubuntu 25.10 uses the
 # standard dracut layout, so pick the writable module tree dynamically.
