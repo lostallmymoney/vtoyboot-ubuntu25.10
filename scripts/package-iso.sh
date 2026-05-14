@@ -42,12 +42,14 @@ cp -rL \
 # Generate the ISO
 # The root of the ISO will contain the $PKG_NAME directory
 xorriso -as mkisofs \
-    -allow-lowercase \
-    -R \
-    -V "VTOYBOOT" \
-    -P "VENTOY" \
-    -p "https://www.ventoy.net" \
-    -o "$OUT_ISO" \
-    "$STAGE"
+    -iso-level 3 \
+    -full-iso9660-filenames \
+    -rock \
+    -joliet \
+    -volid "VTOYBOOT" \
+    -publisher "VENTOY" \
+    -appid "https://www.ventoy.net" \
+    -output "$OUT_ISO" \
+    "$TARGET_DIR"
 
 echo "Created $OUT_ISO"
