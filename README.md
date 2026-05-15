@@ -1,3 +1,4 @@
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/lostallmymoney?label=Sponsor&logo=GitHub)](https://github.com/sponsors/lostallmymoney)
 # vtoyboot
 Tried to un-mess that project into something manageable
 
